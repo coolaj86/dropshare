@@ -8,8 +8,8 @@
           "tmp": "/tmp"
         , "storageDir": __dirname + "/files"
         , "client": __dirname + "/public"
-        //, "databaseStrategy": "redis"
-        , "databaseStrategy": "json"
+        , "databaseStrategy": "redis"
+        //, "databaseStrategy": "json"
       }
     , app
     , key
