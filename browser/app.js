@@ -288,7 +288,13 @@
           $('#itemview').prepend('<img src="' + url + '" />');
         break;
         case 'mp3':
-          $('#itemview').prepend('<audio controls="controls"><source src="' + url + '" type="audio/mp3" /></audio>');
+          $('#itemview').prepend('<audio controls="controls"><source src="' + url + '" type="audio/mpeg" /></audio>');
+        break;
+        case 'm4a':
+          $('#itemview').prepend('<audio controls="controls"><source src="' + url + '" /></audio>');
+        break;
+        case 'ogg':
+          $('#itemview').prepend('<audio controls="controls"><source src="' + url + '" type="audio/ogg" /></audio>');
         break;
         case 'mp4':
           $('#itemview').prepend('<video controls="controls"><source src="' + url + '" type="video/mp4" /></video>');
