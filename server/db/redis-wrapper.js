@@ -8,6 +8,8 @@
   function RedisWrapper(opts) {
 
     var client
+      , connectionAttempts = 0
+      , maxAttempts = 4
       ;
 
     function createClient(opts) {
@@ -25,8 +27,21 @@
     }
 
     function handleError(err) {
+      connectionAttempts += 1;
       console.error("[dropshare redis]", err.message);
-      client.quit();
+
+      if (connectionAttempts > maxAttempts) {
+        console.error(
+            "[dropshare redis] could not connect to redis database after"
+          , connectionAttempts
+          , "attempts"
+        );
+        client.quit();
+        return;
+      }
+
+      // Wait for 1 second then try to reconnect to redis.
+      setTimeout(createClient(opts), 1000);
     }
 
     createClient(opts);
