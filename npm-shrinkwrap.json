@@ -1,0 +1,93 @@
+{
+  "name": "dropshare",
+  "version": "0.3.6",
+  "dependencies": {
+    "connect": {
+      "version": "2.3.5",
+      "dependencies": {
+        "qs": {
+          "version": "0.4.2"
+        },
+        "mime": {
+          "version": "1.2.4"
+        },
+        "formidable": {
+          "version": "1.0.11"
+        },
+        "crc": {
+          "version": "0.2.0"
+        },
+        "cookie": {
+          "version": "0.0.4"
+        },
+        "fresh": {
+          "version": "0.0.1"
+        },
+        "bytes": {
+          "version": "0.0.1"
+        },
+        "range-parser": {
+          "version": "0.0.4"
+        },
+        "debug": {
+          "version": "0.7.0"
+        }
+      }
+    },
+    "connect_router": {
+      "version": "1.8.6"
+    },
+    "mime": {
+      "version": "1.2.6"
+    },
+    "fs.extra": {
+      "version": "1.1.5",
+      "dependencies": {
+        "walk": {
+          "version": "2.2.1"
+        }
+      }
+    },
+    "connect-cors": {
+      "version": "0.5.1"
+    },
+    "sequence": {
+      "version": "2.2.1"
+    },
+    "redis": {
+      "version": "0.6.7"
+    },
+    "formaline": {
+      "version": "0.6.4"
+    },
+    "numeric-buffer": {
+      "version": "0.1.0"
+    },
+    "dom-storage": {
+      "version": "1.0.0"
+    },
+    "json-storage": {
+      "version": "1.1.2"
+    },
+    "forEachAsync": {
+      "version": "2.2.0"
+    },
+    "http-json": {
+      "version": "1.0.2"
+    },
+    "mkdirp": {
+      "version": "0.3.3"
+    },
+    "fs-extra": {
+      "version": "0.1.1",
+      "dependencies": {
+        "rimraf": {
+          "version": "1.0.9"
+        },
+        "ncp": {
+          "version": "0.2.6"
+        }
+      }
+    }
+  }
+}
