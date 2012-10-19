@@ -23,7 +23,9 @@
     ;
 
   connect.cors = require('connect-cors');
-  connect.router = require('connect_router');
+  if (!connect.router) {
+    connect.router = require('connect_router');
+  }
 
   // http://stackoverflow.com/a/6969486/151312
   function escapeRegExp(str) {
