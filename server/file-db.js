@@ -29,7 +29,7 @@
   };
   FileDb.prototype.put = function (cb, fileStat) {
     var self = this
-      , newFilePath = self._privateDir + '/' + fileStat.sha1checksum
+      , newFilePath = self._privateDir + '/' + (fileStat.sha1checksum || fileStat.sha1)
       ;
 
     fs.stat(fileStat.path, function (err, stat) {

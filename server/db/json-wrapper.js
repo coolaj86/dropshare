@@ -15,14 +15,11 @@
  
   JsonDb.prototype.get = function (key, cb) {
     var self = this
+      , val = self._store.get(key)
       ;
 
+    val._id = key;
     process.nextTick(function () {
-      var val = self._store.get(key)
-        ;
-
-      val._id = key;
-
       cb(null, val, true);
     });
   };

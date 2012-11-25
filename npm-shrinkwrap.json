@@ -1,9 +1,9 @@
 {
   "name": "dropshare",
-  "version": "0.3.6",
+  "version": "0.5.0",
   "dependencies": {
     "connect": {
-      "version": "2.3.5",
+      "version": "2.7.0",
       "dependencies": {
         "qs": {
           "version": "0.4.2"
@@ -58,7 +58,7 @@
       "version": "0.6.7"
     },
     "formaline": {
-      "version": "0.6.4"
+      "version": "2.0.0"
     },
     "numeric-buffer": {
       "version": "0.1.0"

@@ -14,7 +14,7 @@
     , mkdirp = require('mkdirp')
     , assert = require('assert')
     , forEachAsync = require('forEachAsync')
-    , Formaline = require('formaline')
+    , Formaline = require('formaline').Formaline
     , FileDb = require('./file-db')
     , Sequence = require('sequence')
       // TODO use different strategies - words
@@ -143,13 +143,16 @@
     });
   };
 
-  Dropshare.prototype.handleUploadedFiles = function (json, res) {
+  Dropshare.prototype.handleUploadedFiles = function (req, res, fields, files) {
     var responses = []
       , sequence = Sequence.create()
       , self = this
       ;
 
-    forEachAsync(json.files, function (next, fileData) {
+    forEachAsync(Object.keys(files), function (next, fieldname) {
+      var fileData = files[fieldname]
+        ;
+
       function pushResponse(response) {
         responses.push(response);
         next();
@@ -162,12 +165,12 @@
     });
   };
 
-  Dropshare.prototype.handleUploadedFile = function (cb, formPart) {
+  Dropshare.prototype.handleUploadedFile = function (cb, formFile) {
     var self = this
       ;
 
     // Check that metadata exists for this ID
-    self._storage.get(formPart.name, function (err, result) {
+    self._storage.get(formFile.fieldname, function (err, result) {
       var response
         , res
         ;
@@ -175,20 +178,21 @@
       if (err !== null || result === null) {
         cb({
           "result": "error",
-          "data": "No metadata for id '" + formPart.name + "'."
+          "data": "No metadata for id '" + formFile.fieldname + "'."
         });
         return;
       }
 
       function onStored(err, fileStoreKey, file) {
-        self._addSha1ToMetaData(formPart.name, fileStoreKey, file);
+        self._addSha1ToMetaData(formFile.fieldname, fileStoreKey, file);
         cb({
           "result": "success",
-          "data": "File " + formPart.name + " stored successfully."
+          "data": "File " + formFile.fieldname + " stored successfully."
         });
       }
       // If metadata exists, then move the file and update the metadata with the new path
-      res = self._fileDb.put(onStored, formPart.value[0]);
+      console.log('formFile', formFile);
+      res = self._fileDb.put(onStored, formFile);
     });
   };
 
@@ -199,7 +203,7 @@
     self._storage.get(id, function (err, data, isJSON) {
       assert.ok(isJSON, "Metadata is not JSON");
 
-      data.sha1checksum = file.sha1checksum;
+      data.sha1checksum = file.sha1;
       data.fileStoreKey = fileStoreKey;
       self._storage.set(id, data, function (err, res) {
         assert.deepEqual(err, null, "Error storing metadata again.");
@@ -218,49 +222,39 @@
       ;
 
     config = {
-        sha1sum: true
-      , removeIncompleteFiles: true
-        // 1TiB... yep
-      , uploadThreshold: 1024 * 1024 * 1024
-      , listeners: {
-            'fileprogress': function (ev, chunk) {
-              // here's where we could snatch the target data
-              // as it is streaming
-            }
+        hashes: ["md5", "sha1"]
+      // treat all fields singularly
+      , arrayFields: []
+    };
 
-          , 'loadend': function (json, res, callback) {
-              console.log('\njson is\n', json);
-              try {
-                callback(json, res);
-              } catch ( err ) {
-                console.error( 'error', err.stack );
-              }
-            }
+    form = Formaline.create(req, config);
+    form.on('end', function (fields, files) {
+      console.log('\nfields are:');
+      console.log(fields);
+      console.log('files are:');
+      console.log(files);
+      console.log();
 
-          , 'error': function (err) {
-              console.error('[formaline error]');
-              console.error(err && err.stack || err);
-              console.error(arguments);
-            }
-
-      } // end listeners
-    }; // end config object
-
-    // XXX Trickery to get around connect 1.7 vs 1.8 vs 2.x issues
-    req.body = undefined;
-    form = new Formaline(config);
-    form.parse(req, res, function () {
       var args = Array.prototype.slice.call(arguments)
         ;
 
-      self.handleUploadedFiles.apply(self, args);
+      try {
+        self.handleUploadedFiles(req, res, fields, files);
+      } catch ( err ) {
+        console.error( 'error', err.stack );
+      }
+    });
+    form.on('error', function (err) {
+      console.error('[formaline error]');
+      console.error(err && err.stack || err);
+      console.error(arguments);
     });
   };
 
   Dropshare.prototype._isFileMarkedAsUploadSuccessful = function (req, res, err, data) {
     // backwards compat from when sha1checksum was the key
     if (!data.fileStoreKey) {
-      data.fileStoreKey = data.sha1checksum;
+      data.fileStoreKey = data.sha1checksum || data.sha1;
     }
 
     if (!err && data && 'undefined' !== typeof data.fileStoreKey) {
@@ -299,7 +293,7 @@
 
       // backwards compat from when sha1checksum was the key
       if (!data.fileStoreKey) {
-        data.fileStoreKey = data.sha1checksum;
+        data.fileStoreKey = data.sha1checksum || data.sha1;
       }
 
       req._preFilesMountUrl = req.url;
@@ -421,7 +415,7 @@
 
       // backwards compat
       if (!data.fileStoreKey) {
-        data.fileStoreKey = data.sha1checksum;
+        data.fileStoreKey = data.sha1checksum || data.sha1;
       }
 
       //Delete from Db
