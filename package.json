@@ -25,7 +25,7 @@
     "dropshare-server": "bin/dropshare-server.js"
   },
   "dependencies": {
-    "connect": ">= 2.7",
+    "connect": ">= 2.7 < 3.0.0",
     "connect_router": "1.x",
     "mime": "~1.2",
     "fs.extra": "1.x",
