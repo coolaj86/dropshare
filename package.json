@@ -2,7 +2,7 @@
   "author": "AJ ONeal <coolaj86@gmail.com> (http://coolaj86.info/)",
   "name": "dropshare",
   "description": "A ge.tt / min.us clone for your private servers",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "homepage": "dropshare.coolaj86.info",
   "contributors": [
     {
@@ -32,7 +32,7 @@
     "connect-cors": "~0.5",
     "sequence": "2.x",
     "redis": "0.6.x",
-    "formaline": "0.6.4",
+    "formaline": ">=2.0.1 <2.1.0",
     "numeric-buffer": "0.1.x",
     "dom-storage": "1.x",
     "json-storage": "1.x",
