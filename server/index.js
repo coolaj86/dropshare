@@ -1,5 +1,3 @@
-/*jshint strict:true node:true es5:true onevar:true laxcomma:true laxbreak:true*/
-/*jshint laxcomma:true es5:true node:true onevar:true*/
 (function () {
   "use strict";
   /**
