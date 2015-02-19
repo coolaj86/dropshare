@@ -1,18 +1,18 @@
 (function () {
   "use strict";
 
-  var dropshare = require('./server/index')
-    , config = require('./config')
-    , options = {
+  var PromiseA = require('bluebird').Promise;
+  var dropshare = require('./server/index');
+  var config = require('./config');
+  var options = {
           "tmp": "/tmp"
         , "storageDir": __dirname + "/files"
         , "client": __dirname + "/public"
         , "databaseStrategy": "redis"
         //, "databaseStrategy": "json"
-      }
-    , app
-    , key
-    ;
+      };
+  var app;
+  var key;
 
 
   // Use the options provided in the config.js file
@@ -20,7 +20,14 @@
     options[key] = config[key];
   }
 
-  app = dropshare.create(options);
+  module.exports.create = function (server, hostname, securePort, config) {
+    if (config) {
+      for (key in config) {
+        options[key] = config[key];
+      }
+    }
+    app = dropshare.create(options);
 
-  module.exports = app;
+    return PromiseA.resolve(app);
+  };
 }());

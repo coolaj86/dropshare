@@ -3,27 +3,30 @@
   /**
    * Module dependencies.
    */
+  var PromiseA = require('bluebird').Promise
+  var fs = require('fs.extra');
+  var path = require('path');
 
-  require('http-json').init(require('http'));
+  var express = require('express');
+  var serveStatic = require('serve-static');
+  var urlrouter = require('urlrouter');
+  var CORS = require('connect-cors');
+  var cookieParser = require('cookie-parser');
+  var errorHandler = require('errorhandler');
+  var bodyParser = require('body-parser');
+  var compression = require('compression');
+  var query = require('connect-query');
 
-  var connect = require('connect')
-    , fs = require('fs.extra')
-    , path = require('path')
-    , mkdirp = require('mkdirp')
-    , assert = require('assert')
-    , forEachAsync = require('forEachAsync')
-    , Formaline = require('formaline').Formaline
-    , FileDb = require('./file-db')
-    , Sequence = require('sequence')
-      // TODO use different strategies - words
+  var hri = require('human-readable-ids').hri;
+  var mkdirp = require('mkdirp');
+  var assert = require('assert');
+  var forEachAsync = require('foreachasync').forEachAsync;
+  var Formaline = require('formaline').Formaline;
+  var FileDb = require('./file-db');
+  var Sequence = require('sequence');
+      // TODO use different strategies - friendly-ids / words
       // The DropShare Epoch -- 1320969600000 -- Fri, 11 Nov 2011 00:00:00 GMT
-    , generateId = require('./gen-id').create(1320769600000)
-    ;
-
-  connect.cors = require('connect-cors');
-  if (!connect.router) {
-    connect.router = require('connect_router');
-  }
+  var generateId = require('./gen-id').create(1320769600000);
 
   // http://stackoverflow.com/a/6969486/151312
   function escapeRegExp(str) {
@@ -41,11 +44,11 @@
       str.shift();
       flags = str.pop();
       re = new RegExp(str.join('/'), flags);
-      console.log('is regexp', re);
+      //console.log('is regexp', re);
     } else {
       re = new RegExp(escapeRegExp(str.join('/')), 'gi');
       //return new RegExp("\\s*" + escapeRegExp(str) + "\\s*");
-      console.log('not regexp', re);
+      //console.log('not regexp', re);
     }
 
     return re;
@@ -92,10 +95,11 @@
       self._allowUserSpecifiedIds = true;
     }
 
-    return createApiServer(self);
+    self._app = createApiServer(self);
   }
   Dropshare.create = function (a, b, c) {
-    return new Dropshare(a, b, c);
+    var dropshare = new Dropshare(a, b, c);
+    return dropshare._app;
   };
 
   // Routes
@@ -120,24 +124,39 @@
       return;
     }
 
-    forEachAsync(req.body, function (next, meta, i) {
-      meta.timestamp = now;
-      if (self._allowUserSpecifiedIds && meta.id) {
-        // XXX BUG check for the id first
-        id = meta.id;
+    return forEachAsync(req.body, function (meta, i) {
+      function getId() {
+        return new PromiseA(function (resolve) {
+          //id = generateId();
+          id = hri.random();
+          self._storage.get(id, function (err, data, isJSON) {
+            if (data) {
+              return getId();
+            } else {
+              resolve(id);
+            }
+          });
+        });
       }
-      else {
-        id = generateId();
-      }
-      self._storage.set(id, meta, function (err, data) {
-        ids.push(id);
-        next();
+
+      return new PromiseA(function (resolve) {
+        meta.timestamp = now;
+        if (self._allowUserSpecifiedIds && meta.id) {
+          // XXX BUG check for the id first
+          id = meta.id;
+        }
+
+        return getId(id).then(function () {
+          self._storage.set(id, meta, function (err, data) {
+            ids.push(id);
+            resolve(id);
+          });
+        });
       });
-    }).then(function (next) {
+    }).then(function () {
       res.writeHead(200, {'content-type': 'application/json'});
       res.write(JSON.stringify(ids));
       res.end();
-      next();
     });
   };
 
@@ -147,16 +166,18 @@
       , self = this
       ;
 
-    forEachAsync(Object.keys(files), function (next, fieldname) {
-      var fileData = files[fieldname]
-        ;
+    forEachAsync(Object.keys(files), function (fieldname) {
+      return new PromiseA(function (resolve) {
+        var fileData = files[fieldname]
+          ;
 
-      function pushResponse(response) {
-        responses.push(response);
-        next();
-      }
+        function pushResponse(response) {
+          responses.push(response);
+          resolve();
+        }
 
-      self.handleUploadedFile(pushResponse, fileData);
+        self.handleUploadedFile(pushResponse, fileData);
+      });
     }).then(function () {
       res.writeHead(200, {"content-type": "application/json"});
       res.end(formatFileUploadResponses(responses));
@@ -189,7 +210,7 @@
         });
       }
       // If metadata exists, then move the file and update the metadata with the new path
-      console.log('formFile', formFile);
+      //console.log('formFile', formFile);
       res = self._fileDb.put(onStored, formFile);
     });
   };
@@ -220,18 +241,20 @@
       ;
 
     config = {
-        hashes: ["md5", "sha1"]
+        hashes: ["sha1"]
       // treat all fields singularly
       , arrayFields: []
     };
 
     form = Formaline.create(req, config);
     form.on('end', function (fields, files) {
+      /*
       console.log('\nfields are:');
       console.log(fields);
       console.log('files are:');
       console.log(files);
       console.log();
+      */
 
       var args = Array.prototype.slice.call(arguments)
         ;
@@ -251,7 +274,7 @@
 
   Dropshare.prototype._isFileMarkedAsUploadSuccessful = function (req, res, err, data) {
     // backwards compat from when sha1checksum was the key
-    if (!data.fileStoreKey) {
+    if (data && !data.fileStoreKey) {
       data.fileStoreKey = data.sha1checksum || data.sha1;
     }
 
@@ -270,6 +293,7 @@
   };
 
   Dropshare.prototype.redirectToFile = function (req, res, next) {
+    //console.log('[ds] redirectToFile', req.url, req.params);
     var self = this
       ;
 
@@ -285,7 +309,7 @@
     self._storage.get(dbId, function (err, data) {
       if (!self._isFileMarkedAsUploadSuccessful(req, res, err, data)) {
         // TODO check for progress
-        next();
+        //next();
         return;
       }
 
@@ -296,6 +320,7 @@
 
       req._preFilesMountUrl = req.url;
       req.url = self.filesMount + '/' + data.fileStoreKey;
+      //console.log(req._preFilesMountUrl, req.url, req.params);
       next();
     });
   };
@@ -317,7 +342,7 @@
         // TODO allow null and undefined without triggering an error
         res.error(err);
       }
-      res.json(matches, opts);
+      res.send(matches, opts);
     }
 
     if (query.debug || query.prettyprint) {
@@ -429,40 +454,30 @@
   };
 
   function createApiServer(dropshare) {
-    var bP = connect.bodyParser()
+    var bP = bodyParser()
       , app
       , wrappedDropshare = {}
       ;
 
-    function modifiedBodyParser(req, res, next) {
-      // don't allow this instance to parse forms, but allow other instances the pleasure
-      var multi = connect.bodyParser.parse['multipart/form-data']
-        ;
-
-      connect.bodyParser.parse['multipart/form-data'] = undefined;
-      bP(req, res, function () {
-        connect.bodyParser.parse['multipart/form-data'] = multi;
-        next();
-      });
-    }
-
-    function router(app) {
+    function router(rest) {
       // TODO permanent files?
-      app.post('/meta/new', wrappedDropshare.createIds);
-      app.post('/meta', wrappedDropshare.createIds);
-      //app.patch('/meta/:id', wrappedDropshare.updateMetadata);
-      app.get('/meta/:id', wrappedDropshare.getMetadata);
-      app.get('/meta', wrappedDropshare.queryMetadata);
-      app.delete('/meta/:id', wrappedDropshare.removeFile);
+      rest.post('/meta/new', wrappedDropshare.createIds);
+      rest.post('/meta', wrappedDropshare.createIds);
+      //rest.patch('/meta/:id', wrappedDropshare.updateMetadata);
+      rest.get('/meta/:id', wrappedDropshare.getMetadata);
+      rest.get('/meta', wrappedDropshare.queryMetadata);
+      rest.delete('/meta/:id', wrappedDropshare.removeFile);
 
       // deprecated
-      app.delete('/files/:id', wrappedDropshare.removeFile);
-      app.post('/files/new', wrappedDropshare.createIds);
+      rest.delete('/files/:id', wrappedDropshare.removeFile);
+      rest.post('/files/new', wrappedDropshare.createIds);
 
-      app.post('/files', wrappedDropshare.receiveFiles);
+      rest.post('/files', wrappedDropshare.receiveFiles);
 
       // this must remain hard-coded for now. it's tied to the logic for figuring out the mointpoint
-      app.get('/files/:id/:filename?', wrappedDropshare.redirectToFile);
+      rest.get('/files/:id/:filename', wrappedDropshare.redirectToFile);
+      rest.get('/files/:id\\.:format', wrappedDropshare.redirectToFile);
+      rest.get('/files/:id', wrappedDropshare.redirectToFile);
     }
 
     // to prevent loss of this-ness
@@ -480,31 +495,46 @@
       };
     });
 
-    app = connect();
-    app.use(connect.cors());
-    app.use(connect.static(dropshare.clientDir));
-    if (connect.json) {
-      app.use(connect.json());
-      app.use(connect.urlencoded());
-    } else {
-      app.use(modifiedBodyParser);
-    }
-    app.use(connect.query());
+    app = express();
+    app.use(CORS({ credentials: false }));
+    app.use(serveStatic(dropshare.clientDir));
+    app.use(bodyParser.json({
+      strict: true // only objects and arrays
+    , inflate: true
+    , limit: 100 * 1024
+    , reviver: undefined
+    , type: 'json'
+    , verify: undefined
+    }));
+    app.use(bodyParser.urlencoded({
+      extended: true
+    , inflate: true
+    , limit: 100 * 1024
+    , type: 'urlencoded'
+    , verify: undefined
+    }));
+    app.use(query());
     //, connect.methodOverride()
-    app.use(connect.router(router));
+    app.use(function (req, res, next) {
+      //console.log('[ds] req.url', req.url);
+      next();
+    });
+    app.use(urlrouter(router));
       // Development
-    app.use(connect.errorHandler({ dumpExceptions: true, showStack: true }));
+    app.use(errorHandler({ dumpExceptions: true, showStack: true }));
       // Production
       //, connect.errorHandler()
-    app.use(dropshare.filesMount, connect.static(dropshare.filesDir));
+    app.use(dropshare.filesMount, serveStatic(dropshare.filesDir));
     app.use(function (req, res, next) {
       // keep the filesMount undiscoverable, even in an error
       if (req._preFilesMountUrl) {
         req.url = req._preFilesMountURl;
       }
+      //console.log('[ds] Final URL', req.url, dropshare.filesDir);
       next();
     });
     app.filesDir = dropshare.filesDir;
+
     return app;
   }
 

@@ -18,7 +18,9 @@
       , val = self._store.get(key)
       ;
 
-    val._id = key;
+    if (val) {
+      val._id = key;
+    }
     process.nextTick(function () {
       cb(null, val, true);
     });

@@ -1,9 +1,9 @@
 {
-  "author": "AJ ONeal <coolaj86@gmail.com> (http://coolaj86.info/)",
+  "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
   "name": "dropshare",
   "description": "A ge.tt / min.us clone for your private servers",
-  "version": "0.5.0",
-  "homepage": "dropshare.coolaj86.info",
+  "version": "1.0.0",
+  "homepage": "https://dropsha.re",
   "contributors": [
     {
       "name": "Jamison Dance",
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/SpotterRF/dropshare.git"
+    "url": "git://github.com/coolaj86/dropshare.git"
   },
   "main": "server/index",
   "scripts": {
@@ -25,21 +25,27 @@
     "dropshare-server": "bin/dropshare-server.js"
   },
   "dependencies": {
-    "connect": ">=2.7.1 <2.8.0",
-    "connect_router": "1.x",
-    "mime": "~1.2",
-    "fs.extra": "1.x",
-    "connect-cors": "~0.5",
-    "sequence": "2.x",
-    "redis": "0.6.x",
-    "formaline": ">=2.0.1 <2.1.0",
-    "numeric-buffer": "0.1.x",
+    "body-parser": "^1.12.0",
+    "compression": "^1.4.1",
+    "connect": "^3.3.4",
+    "connect-cors": "^0.5.6",
+    "connect-query": "^0.2.0",
+    "cookie-parser": "^1.3.4",
     "dom-storage": "1.x",
+    "errorhandler": "^1.3.4",
+    "express": "^4.11.2",
+    "express-session": "^1.10.3",
+    "formaline": ">=2.0.1 <2.1.0",
+    "fs-extra": "0.1.x",
+    "fs.extra": "1.x",
     "json-storage": "1.x",
-    "forEachAsync": "2.x",
-    "http-json": "1.x",
+    "mime": "~1.2",
     "mkdirp": "0.3.x",
-    "fs-extra": "0.1.x"
+    "numeric-buffer": "0.1.x",
+    "redis": "0.6.x",
+    "sequence": "2.x",
+    "serve-static": "^1.9.1",
+    "urlrouter": "^0.5.4"
   },
   "devDependencies": {}
 }
