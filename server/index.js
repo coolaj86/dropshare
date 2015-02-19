@@ -6,6 +6,7 @@
   var PromiseA = require('bluebird').Promise
   var fs = require('fs.extra');
   var path = require('path');
+  var assert = require('assert');
 
   var express = require('express');
   var serveStatic = require('serve-static');
@@ -17,16 +18,13 @@
   var compression = require('compression');
   var query = require('connect-query');
 
-  var hri = require('human-readable-ids').hri;
   var mkdirp = require('mkdirp');
-  var assert = require('assert');
-  var forEachAsync = require('foreachasync').forEachAsync;
   var Formaline = require('formaline').Formaline;
+  var forEachAsync = require('foreachasync').forEachAsync;
   var FileDb = require('./file-db');
-  var Sequence = require('sequence');
-      // TODO use different strategies - friendly-ids / words
-      // The DropShare Epoch -- 1320969600000 -- Fri, 11 Nov 2011 00:00:00 GMT
-  var generateId = require('./gen-id').create(1320769600000);
+  var hri = require('human-readable-ids').hri;
+  // The DropShare Epoch -- 1320969600000 -- Fri, 11 Nov 2011 00:00:00 GMT
+  //var generateId = require('./gen-id').create(1320769600000);
 
   // http://stackoverflow.com/a/6969486/151312
   function escapeRegExp(str) {
@@ -162,7 +160,6 @@
 
   Dropshare.prototype.handleUploadedFiles = function (req, res, fields, files) {
     var responses = []
-      , sequence = Sequence.create()
       , self = this
       ;
 
@@ -481,14 +478,13 @@
     }
 
     // to prevent loss of this-ness
-    [
-        'createIds'
-      , 'getMetadata'
-      , 'queryMetadata'
-      , 'updateMetadata'
-      , 'removeFile'
-      , 'receiveFiles'
-      , 'redirectToFile'
+    [ 'createIds'
+    , 'getMetadata'
+    , 'queryMetadata'
+    , 'updateMetadata'
+    , 'removeFile'
+    , 'receiveFiles'
+    , 'redirectToFile'
     ].forEach(function (key) {
       wrappedDropshare[key] = function (req, res, next) {
         dropshare[key](req, res, next);
@@ -529,8 +525,8 @@
       // keep the filesMount undiscoverable, even in an error
       if (req._preFilesMountUrl) {
         req.url = req._preFilesMountURl;
+        delete req._preFilesMountUrl;
       }
-      //console.log('[ds] Final URL', req.url, dropshare.filesDir);
       next();
     });
     app.filesDir = dropshare.filesDir;
