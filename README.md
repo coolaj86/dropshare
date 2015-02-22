@@ -1,3 +1,8 @@
+MOVED TO NEW MAINTAINER
+=======================
+
+This code has bugfixes and updates available at https://github.com/coolaj86/dropshare
+
 Dropshare
 ===
 
