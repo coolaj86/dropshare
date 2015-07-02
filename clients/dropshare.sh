@@ -3,7 +3,7 @@
 #
 # Installation
 #
-# sudo wget 'https://raw.github.com/SpotterRF/dropshare/master/clients/dropshare.sh' -O '/usr/local/bin/dropshare'
+# sudo wget 'https://raw.github.com/coolaj86/dropshare/master/clients/dropshare.sh' -O '/usr/local/bin/dropshare'
 # sudo chmod a+x '/usr/local/bin/dropshare'
 #
 
@@ -37,7 +37,7 @@ FILE_MTIME=`stat --printf '%Y\n' "${FILE}" 2>/dev/null || stat -f '%m' "${FILE}"
 FILE_MTIME=`date -d "@${FILE_MTIME}" -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -r "${FILE_MTIME}" +"%Y-%m-%dT%H:%M:%SZ"`
 
 #echo '[{
-RESULT=`curl --silent "${HOST}/files/new"  -X POST \
+RESULT=`curl --insecure --silent "${HOST}/files/new"  -X POST \
   -H "Content-Type: application/json" \
   -d '[{
         "size": '${FILE_SIZE}',
@@ -53,8 +53,8 @@ ID=`echo ${RESULT} | cut -d'"' -f2`
 echo "Uploading to '${HOST}/files/${ID}/${FILE_NAME}'"
 echo ""
 
-# TODO 
-RESPONSE=`curl --silent --progress-bar "${HOST}/files"  -X POST \
+# TODO
+RESPONSE=`curl --insecure --silent --progress-bar "${HOST}/files"  -X POST \
   --form ${ID}=@"${FILE}"`
 echo ""
 
