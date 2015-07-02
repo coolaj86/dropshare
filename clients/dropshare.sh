@@ -7,7 +7,9 @@
 # sudo chmod a+x '/usr/local/bin/dropshare'
 #
 
-HOST="http://api.dropsha.re"
+STATIC_HOST="https://dropsha.re"
+# for API
+HOST="https://dropsha.re"
 
 FILE=$1
 if [ ! -f "${FILE}" ]
@@ -48,7 +50,7 @@ RESULT=`curl --silent "${HOST}/files/new"  -X POST \
 # ex: ["p2Oo6f8"]
 ID=`echo ${RESULT} | cut -d'"' -f2`
 
-echo "Uploading to 'http://api.dropsha.re/files/${ID}/${FILE_NAME}'"
+echo "Uploading to '${HOST}/files/${ID}/${FILE_NAME}'"
 echo ""
 
 # TODO 
@@ -56,13 +58,13 @@ RESPONSE=`curl --silent --progress-bar "${HOST}/files"  -X POST \
   --form ${ID}=@"${FILE}"`
 echo ""
 
-# http://api.dropsha.re/files/dx.R6f8/removefriend.php.har
+# https://dropsha.re/api/files/dx.R6f8/removefriend.php.har
 echo "Your file, Sir! (or Ma'am):"
 echo ""
-echo "http://dropsha.re/#${ID}"
+echo "${STATIC_HOST}/#${ID}"
 echo ""
-echo "wget 'http://api.dropsha.re/files/${ID}/${FILE_NAME}'"
+echo "wget '${HOST}/files/${ID}/${FILE_NAME}'"
 echo ""
-echo "curl 'http://api.dropsha.re/files/${ID}' -o '${FILE_NAME}'"
+echo "curl '${HOST}/files/${ID}' -o '${FILE_NAME}'"
 echo ""
 echo "dropshare-get ${ID} ${FILE_ONAME}"
